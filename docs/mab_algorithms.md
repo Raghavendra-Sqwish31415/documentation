@@ -24,19 +24,21 @@ The key contribution is using a bootstrapping method to approximate UCB instead 
 
 1. Each of the $K$ arms is actually $m$ different reward models.
 2. when a context arrives, for each arm, $m$ different rewards are computed (from each model) and the 80 percentile (just for example) reward is used. 
-3. The action that gives the best UCB is chosen and new rewards are observed. 4. This and the context are used to update all $m$ reward models.   
+3. The action that gives the best UCB is chosen and new rewards are observed.
+4. This and the context are used to update all $m$ reward models.   
 
 ### Pseudocode
+
 $$
 \begin{align}
-&\textbf{Inputs: } \quad m \text{ (number of resamples)}, \quad p \text{ (percentile)}, \quad \hat{f}_{1:k, 1:m} \text{ (online oracles)} \\
-&\textbf{For each round } \quad t = 1, 2, \dots \quad \textbf{ do:} \nonumber \\
+&\textbf{Inputs:} \quad m \text{ (number of resamples)}, \quad p \text{ (percentile)}, \quad \hat{f}_{1:k, 1:m} \text{ (online oracles)} \\
+&\textbf{For\ each\ round} \quad t = 1, 2, \dots \quad \textbf{do:} \nonumber \\
 &\quad \text{Receive context } \quad x_t \in \mathbb{R}^d \nonumber \\
-&\quad \textbf{For each arm } \quad q = 1, \dots, k: \nonumber \\
+&\quad \textbf{For\ each\ arm} \quad q = 1, \dots, k: \nonumber \\
 &\quad\quad \hat{r}_{\text{ucb}, q} = \text{Percentile}_p \left\{ \hat{f}_{q,1}(x_t), \dots, \hat{f}_{q,m}(x_t) \right\} \\
 &\quad \text{Choose action } \quad a = \arg\max_q \hat{r}_{\text{ucb}, q} \\
 &\quad \text{Play arm } \quad a \quad \text{ and observe reward } \quad r_t \in \{0, 1\} \nonumber \\
-&\quad \textbf{For each resample } \quad s = 1, \dots, m: \nonumber \\
+&\quad \textbf{For\ each\ resample} \quad s = 1, \dots, m: \nonumber \\
 &\quad\quad w \sim \text{Gamma}(1, 1) \\
 &\quad\quad \text{Update } \quad \hat{f}_{a, s} \quad \text{ with example } \quad (x_t, r_t) \quad \text{ and weight } \quad w \nonumber
 \end{align}
@@ -45,7 +47,7 @@ $$
 ### Cold-start problem
 This is addressed by a mixture of these 2 methods:
 1. initially sampling rewards before using the contexts to carry out actions and obtaining proper rewards.
-2. Return a smoothed reward with magic smoothing factors suggeste din he paper.
+2. Return a smoothed reward with magic smoothing factors suggested in the paper.
 
 $$
 \begin{align}
@@ -53,12 +55,12 @@ $$
 &\textbf{Given:} \quad R_k = \{(x_i, r_i)\} \text{ for arm } k, \quad \pi_k(x) \text{ (contextual policy)} \\
 &n = |R_k|, \quad n_1 = |\{r_i = 1\}|, \quad n_0 = |\{r_i = 0\}| \\
 \\
-&\textbf{If mode} = \text{``mab''} \textbf{:} \nonumber \\
-&\quad \textbf{If } \quad n_0 < m \quad \textbf{or} \quad n_1 < m: \nonumber \\
+&\textbf{If\ mode} = \text{``mab''} \textbf{:} \nonumber \\
+&\quad \textbf{If} \quad n_0 < m \quad \textbf{or} \quad n_1 < m: \nonumber \\
 &\qquad \hat{r}_k \sim \text{Beta}(a + n_1, \quad b + n_0) \\
 &\quad \textbf{Else:} \quad \hat{r}_k = \pi_k(x) \\
 \\
-&\textbf{If mode} = \text{``smooth''} \textbf{:} \nonumber \\
+&\textbf{If\ mode} = \text{``smooth''} \textbf{:} \nonumber \\
 &\quad \hat{r}_k = \pi_k(x) \\
 &\quad \hat{r}_{\text{smooth}} = \frac{n \cdot \hat{r}_k + a}{n + b} \\
 &\quad \hat{r}_k \leftarrow \hat{r}_{\text{smooth}} \\
@@ -130,6 +132,7 @@ $$
 \mathbb{E}[\hat{\mu}_t] = \mu(x_t, y_t)
 $$
 
+
 ### Regret
 
 The regret measures the performance gap between the algorithm and the Bayes optimal strategy (which always picks the best ad for each query):
@@ -154,22 +157,22 @@ Here is pseudocode to implement the algorithm practically:
 $$
 \begin{aligned}
 &\textbf{INPUT:} \quad I, \quad a, \quad b\\
-&\textbf{for } \quad \mathrm{phase\_index}=1 \quad \text{ to } \quad I \quad \textbf{do}\\
+&\textbf{for} \quad \mathrm{phase\_index}=1 \quad \text{ to } \quad I \quad \textbf{do}\\
 &\quad R \gets 2^{\,\mathrm{phase\_index}(-a - b - 4)}\\
 &\quad\text{cluster queries into balls of radius } \quad R\\
 &\quad Y_0 \gets\{\,\text{ads all pairwise within } \quad R\}\\
-&\quad\textbf{classify} \text{ new query } \quad x_t \quad \text{ into cluster } \quad C_j\\
+&\quad\textbf{classify\ new\ query} \quad x_t \quad \text{ into cluster } \quad C_j\\
 &\quad n[y]\gets 0 \quad (\forall y\in Y_0)\\
-&\quad\textbf{for } \quad t=1 \quad \text{ to } \quad 2^{\mathrm{phase\_index}} \quad \textbf{ do}\\
+&\quad\textbf{for} \quad t=1 \quad \text{ to } \quad 2^{\mathrm{phase\_index}} \quad \textbf{do}\\
 &\quad\quad\displaystyle \mathrm{score}[y]\gets \mu^{C_j}(y)+\sqrt{\frac{4\,\mathrm{phase\_index}}{1+n[y]}} \quad (\forall y)\\
 &\quad\quad y_t\gets\arg\max_y\mathrm{score}[y]\\
 &\quad\quad\text{display } \quad y_t\\
-&\quad\quad\textbf{if } \quad \text{add clicked} \quad \textbf{ then} \\
+&\quad\quad\textbf{if} \quad \text{add clicked} \quad \textbf{then} \\
 &\quad\quad\quad n[y_t] \leftarrow n[y_t] + 1 \\
-&\quad\quad\textbf{end if}\\
+&\quad\quad\textbf{end\ if}\\
 &\quad\quad \mu^{C_j}(y) \leftarrow \frac{n[y]}{t} \quad (\forall y)\\
-&\quad\textbf{end for}\\
-&\textbf{end for}\\
+&\quad\textbf{end\ for}\\
+&\textbf{end\ for}\\
 \end{aligned}
 $$
 
@@ -300,7 +303,7 @@ $$
 
 Practically, we will also need to train (continuously update from reward signals) a covariance matrix $A_a$ along with the linear parameter $\theta_a$.
 
-Let a be the action taken. (In google CMAB, y referred to action). The linear map from the context to the UCB score contains a  The best action is chosen as follows:
+Let a be the action taken. (In google CMAB, y referred to action). The linear map from the context to the UCB score contains a confidence interval term. The best action is chosen as follows:
 
 $$
 \begin{align}
@@ -373,15 +376,16 @@ Basically, a reward model is trained from the physical rewards (online learning)
 Algorithm (NeuralUCB, K arms)
 
 Input: $T, \quad \lambda, \quad \nu, \quad \delta, \quad S, \quad \eta, \quad J, \quad m, \quad L$.
+
 Initialize: $\theta_0\sim\text{Gaussian}, \quad Z_0=\lambda I.$
 
 $$
 \begin{align}
-&\textbf{For } \quad t=1,\dots,T \quad \textbf{ do:} \\
+&\textbf{For} \quad t=1,\dots,T \quad \textbf{do:} \\
 &\quad \text{Observe contexts } \quad \{x_{t,a}\}_{a=1}^K.\\
-&\quad \textbf{For } \quad a=1,\dots,K \quad \textbf{ do:}\\
+&\quad \textbf{For} \quad a=1,\dots,K \quad \textbf{do:}\\
 &\quad \quad U_{t,a} = f(x_{t,a};\theta_{t-1}) + \gamma_{t-1}\sqrt{\frac{g(x_{t,a};\theta_{t-1})^\top Z_{t-1}^{-1}\,g(x_{t,a};\theta_{t-1})}{m}}. \quad (g \text{ is the gradient of } f )\\
-&\quad \textbf{end for}\\
+&\quad \textbf{end\ for}\\
 &\quad a_t=\arg\max_{a}U_{t,a}, \quad \text{play } \quad a_t, \quad \text{observe } \quad r_{t,a_t}.\\
 &\quad Z_t = Z_{t-1} + \frac{1}{m}\,g(x_{t,a_t};\theta_{t-1})\,g(x_{t,a_t};\theta_{t-1})^\top,\\
 &\quad \theta_t = \mathrm{TrainNN}\bigl(\lambda, \quad \eta, \quad J, \quad m, \quad \{(x_i,a_i)\}_{i=1}^t, \quad \{r_{i,a_i}\}_{i=1}^t, \quad \theta_0\bigr),\\
@@ -411,9 +415,13 @@ This bandit is a transformer that outputs 2 responses, which are ranked by users
 
 Can this be done in our case? 
 1. The transformer suggests 2 prompts
+
 2. Both prompts are fed into an external LLM
+
 3. LLM produces 2 responses --> 2 rewards
+
 4. Higher reward --> Positive prompt ||| Lower reward --> Negative prompt
+
 5. Use DPO, train transformer
 
 - **Organisations**: Stanford and University of Toronto [paper](https://arxiv.org/pdf/2410.14001)
@@ -425,7 +433,7 @@ HAVE NOT READ YET
 
 ## Neural Contextual Bandits
 - **Organisations**: University of Illanois [paper](https://arxiv.org/pdf/2305.03784)
-**Publication Date**: 5 May 2023
+- **Publication Date**: 5 May 2023
 
 ## ByteDance online recommendation System
 - **Organisations**: ByteDance [paper](https://www.cs.princeton.edu/courses/archive/spring21/cos598D/icde_2021_camera_ready.pdf)

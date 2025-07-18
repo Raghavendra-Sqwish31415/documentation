@@ -2,6 +2,13 @@ site_name: Model Research Documentation
 nav:
   - Home: index.md
   - Multi-Armed Bandit Algorithms: mab_algorithms.md
+  - LLM-tuning:
+    - Hardware: Llm Tuning/hardware.md
+    - Synthetic-Dataset: Llm Tuning/synthetic_dataset.md
+    - Supervised-Finetuning: Llm Tuning/supervised_finetuning.md
+    - Reinforcement-Learning: 
+      - GRPO: Llm Tuning/Reinforcement-Learning/grpo.md
+      - ORPO: Llm Tuning/Reinforcement-Learning/orpo.md
 
 theme:
   name: material
